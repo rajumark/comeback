@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comeback — on-device smart replies for Android</title>
+<meta name="description" content="Comeback suggests three short replies to any message in about half a millisecond, on-device, from a fixed reviewed reply list. ~5 MB, no dependencies. Free, Apache-2.0 code.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect x=%221%22 y=%221%22 width=%2222%22 height=%2222%22 rx=%227%22 fill=%22%232b8a3e%22/><path d=%22M5.5 8.5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-4l-2.5 2v-2a1.5 1.5 0 0 1-1.5-1.5Z%22 fill=%22%23fff%22/></svg>">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-subtle: #f5f5f7;
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --border: #d2d2d7;
+    --accent: #2b8a3e;
+    --accent-hover: #237032;
+    --code-bg: #f5f5f7;
+    --code-text: #1d1d1f;
+    --card-bg: #ffffff;
+    --nav-bg: rgba(255, 255, 255, 0.8);
+    --pill-bg: #f5f5f7;
+    --syn-comment: #6e7781;
+    --syn-keyword: #cf222e;
+    --syn-string: #0a3069;
+    --syn-number: #0550ae;
+    --syn-function: #8250df;
+    --syn-type: #953800;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #000000;
+      --bg-subtle: #1d1d1f;
+      --text: #f5f5f7;
+      --text-secondary: #a1a1a6;
+      --border: #424245;
+      --accent: #2f9e44;
+      --accent-hover: #37b24d;
+      --code-bg: #1d1d1f;
+      --code-text: #f5f5f7;
+      --card-bg: #1d1d1f;
+      --nav-bg: rgba(0, 0, 0, 0.8);
+      --pill-bg: #2c2c2e;
+      --syn-comment: #8b949e;
+      --syn-keyword: #ff7b72;
+      --syn-string: #a5d6ff;
+      --syn-number: #79c0ff;
+      --syn-function: #d2a8ff;
+      --syn-type: #ffa657;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #000000;
+    --bg-subtle: #1d1d1f;
+    --text: #f5f5f7;
+    --text-secondary: #a1a1a6;
+    --border: #424245;
+    --accent: #2f9e44;
+    --accent-hover: #37b24d;
+    --code-bg: #1d1d1f;
+    --code-text: #f5f5f7;
+    --card-bg: #1d1d1f;
+    --nav-bg: rgba(0, 0, 0, 0.8);
+    --pill-bg: #2c2c2e;
+    --syn-comment: #8b949e;
+    --syn-keyword: #ff7b72;
+    --syn-string: #a5d6ff;
+    --syn-number: #79c0ff;
+    --syn-function: #d2a8ff;
+    --syn-type: #ffa657;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-hover); }
+
+  /* Nav */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--nav-bg);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    max-width: 980px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 22px; height: 48px;
+    font-size: 14px;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text); }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { color: var(--text); font-size: 12px; opacity: 0.85; }
+  .nav-links a:hover { opacity: 1; }
+  .nav-cta {
+    font-size: 12px; padding: 6px 14px; border-radius: 980px;
+    background: var(--accent); color: #fff !important; opacity: 1 !important;
+  }
+  .nav-cta:hover { background: var(--accent-hover); }
+
+  /* Hero */
+  .hero {
+    max-width: 980px; margin: 0 auto;
+    padding: 90px 22px 60px;
+    text-align: center;
+  }
+  .hero .eyebrow {
+    font-size: 17px; font-weight: 600; color: var(--accent); margin-bottom: 8px;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 7vw, 64px);
+    font-weight: 700; letter-spacing: -0.015em;
+    margin: 0 0 12px; line-height: 1.05;
+  }
+  .hero p.tagline {
+    font-size: clamp(19px, 3vw, 24px);
+    color: var(--text-secondary);
+    max-width: 640px; margin: 0 auto 32px;
+    font-weight: 400;
+  }
+  .hero-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .hero-trust { font-size: 13px; color: var(--text-secondary); text-align: center; margin: 0 0 48px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 11px 22px; border-radius: 980px; font-size: 15px; font-weight: 400;
+    border: 1px solid transparent; cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: #fff !important; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: transparent; color: var(--accent) !important; border-color: var(--accent); }
+  .btn-secondary:hover { background: var(--accent); color: #fff !important; }
+
+  .hero-demo {
+    background: var(--bg-subtle);
+    border-radius: 18px;
+    padding: 28px;
+    text-align: left;
+    max-width: 640px; margin: 0 auto;
+    border: 1px solid var(--border);
+    transition: opacity 0.35s ease;
+  }
+  .hero-demo.is-fading { opacity: 0; }
+  .hero-demo .prompt { color: var(--text-secondary); font-size: 13px; margin-bottom: 10px; }
+  .hero-demo .input-row {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 15px; margin-bottom: 14px;
+  }
+  .emoji-row { display: flex; gap: 10px; flex-wrap: wrap; font-size: 28px; }
+  .emoji-row span { transition: transform 0.15s; }
+
+  /* Sections */
+  section { max-width: 980px; margin: 0 auto; padding: 70px 22px; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: none; }
+  .section-head { text-align: center; margin-bottom: 44px; }
+  .section-head .kicker {
+    font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  .section-head h2 { font-size: clamp(30px, 4vw, 40px); font-weight: 700; letter-spacing: -0.01em; margin: 0 0 10px; }
+  .section-head p { color: var(--text-secondary); font-size: 18px; max-width: 620px; margin: 0 auto; }
+
+  /* Feature grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .card {
+    background: var(--bg-subtle); border-radius: 18px; padding: 28px;
+    border: 1px solid var(--border);
+  }
+  .card .icon { width: 30px; height: 30px; margin-bottom: 14px; color: var(--accent); display: block; }
+  .card .icon svg { display: block; width: 100%; height: 100%; }
+  .card h3 { font-size: 19px; font-weight: 600; margin: 0 0 8px; }
+  .card p { font-size: 14px; color: var(--text-secondary); margin: 0; line-height: 1.5; }
+
+  /* Code blocks */
+  pre {
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: 14px; padding: 20px 22px; overflow-x: auto;
+    font-size: 13.5px; line-height: 1.6; border: 1px solid var(--border);
+    margin: 0;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+  .hljs-comment, .hljs-quote { color: var(--syn-comment); font-style: italic; }
+  .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-meta .hljs-keyword { color: var(--syn-keyword); }
+  .hljs-string, .hljs-doctag, .hljs-regexp { color: var(--syn-string); }
+  .hljs-number { color: var(--syn-number); }
+  .hljs-title, .hljs-title.function_, .hljs-title.class_ { color: var(--syn-function); }
+  .hljs-built_in, .hljs-type, .hljs-class { color: var(--syn-type); }
+  .hljs-variable, .hljs-attr, .hljs-params, .hljs-property { color: var(--code-text); }
+  .hljs-meta { color: var(--syn-comment); }
+  .code-label {
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+  }
+  .code-block { margin-bottom: 22px; }
+  .tag-pill {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px;
+    border-radius: 980px; background: var(--pill-bg); color: var(--text-secondary);
+    margin-left: 8px; vertical-align: 2px;
+  }
+  .tag-pill.live { background: #d1f7dd; color: #0a6b2c; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Use cases */
+  .usecase-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .usecase {
+    display: flex; gap: 16px; padding: 22px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+  }
+  .usecase .icon { width: 26px; height: 26px; flex: none; color: var(--accent); }
+  .usecase .icon svg { display: block; width: 100%; height: 100%; }
+  .usecase h4 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+  .usecase p { margin: 0; font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* API table */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td code { background: var(--code-bg); padding: 2px 6px; border-radius: 5px; font-size: 12.5px; }
+
+  /* Stat cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+  .stat-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px 20px; text-align: center;
+  }
+  .stat-card .stat-value { font-size: clamp(28px, 4vw, 36px); font-weight: 700; letter-spacing: -0.01em; color: var(--accent); }
+  .stat-card .stat-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); margin-top: 6px; }
+  .stat-card .stat-note { font-size: 12.5px; color: var(--text-secondary); margin-top: 6px; }
+
+  /* Use-case example line */
+  .usecase .example {
+    display: block; margin-top: 10px; font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    color: var(--text-secondary); background: var(--code-bg); border-radius: 8px;
+    padding: 7px 10px;
+  }
+
+  /* Copy button on code blocks */
+  .code-block { position: relative; }
+  .copy-btn {
+    position: absolute; top: 10px; right: 10px;
+    background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text-secondary); font-size: 11px; font-weight: 600;
+    padding: 5px 9px; cursor: pointer; font-family: inherit;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--text-secondary); }
+  .copy-btn.copied { color: var(--accent); border-color: var(--accent); }
+
+  /* Prompt block for AI coding agents */
+  .prompt-block {
+    background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px; margin-top: 16px;
+  }
+  .prompt-block .code-label { margin-bottom: 10px; }
+  .prompt-block pre { background: var(--card-bg); }
+
+  /* FAQ */
+  .faq-item { border-bottom: 1px solid var(--border); padding: 20px 0; }
+  .faq-item:first-child { padding-top: 0; }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-item h4 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+  .faq-item p { font-size: 14.5px; color: var(--text-secondary); margin: 0; line-height: 1.6; }
+
+  /* Footer */
+  footer {
+    max-width: 980px; margin: 0 auto; padding: 50px 22px 80px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+  }
+  footer .foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
+  footer .foot-links a { font-size: 13px; color: var(--text-secondary); }
+  footer .copyright { font-size: 12px; color: var(--text-secondary); }
+
+  .bubble { display:inline-block; background: var(--card-bg); border:1px solid var(--border); border-radius:18px 18px 18px 6px;
+    padding:10px 16px; font-size:16px; margin-bottom:16px; }
+  .chip-row { display:flex; gap:10px; flex-wrap:wrap; }
+  .chip-row span { border:1px solid var(--accent); color: var(--accent); border-radius:980px; padding:7px 16px; font-size:14.5px; background: var(--card-bg); }
+
+  .shot { padding:0; overflow:hidden; }
+  .shot img { width:100%; display:block; border-bottom:1px solid var(--border); }
+  .shot-caption { padding:20px; }
+  .table-note { font-size:14px; color:var(--text-secondary); margin-top:18px; line-height:1.6; }
+  .table-wrap { overflow-x:auto; }
+  @media (max-width: 720px) { .nav-links { display:none; } .hero { padding-top:60px; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="22" height="22" rx="7" fill="var(--accent)"/><path d="M5.5 8.5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-4l-2.5 2v-2a1.5 1.5 0 0 1-1.5-1.5Z" fill="#fff"/><path d="M17 10.5h.5a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5V18l-2.3-1.5H12" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Comeback
+    </div>
+    <div class="nav-links">
+      <a href="#screenshots">Screenshots</a>
+      <a href="#install">Install</a>
+      <a href="#usage">Usage</a>
+      <a href="#quality">Quality</a>
+      <a href="#api">API</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="nav-cta" href="https://github.com/rajumark/comeback">GitHub ↗</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="eyebrow">Comeback · by Hoverfly</div>
+  <h1>One-tap replies,<br>computed on the phone.</h1>
+  <p class="tagline">Suggest three short replies to any incoming message in about half a millisecond. Nothing is sent to a server, nothing is generated, and nothing is added to your build except a 5 MB AAR.</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="#install">Get started</a>
+    <a class="btn btn-secondary" href="https://github.com/rajumark/comeback">View source</a>
+  </div>
+  <p class="hero-trust">Free &amp; open source · Apache-2.0 code · Live on JitPack</p>
+  <div class="hero-demo" id="heroDemo">
+    <div class="prompt" id="demoPrompt">comeback.replies("Thanks for your help")</div>
+    <div class="bubble" id="demoInput">Thanks for your help</div>
+    <div class="chip-row" id="demoChips"></div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="section-head">
+    <div class="kicker">Why Comeback</div>
+    <h2>Smart reply without the baggage</h2>
+    <p>No server, no native libraries, no Google Play services. It is a small Kotlin library that you can read, test and ship.</p>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.5 3.2 8 7.5 9.5 4.3-1.5 7.5-5 7.5-9.5V6Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <h3>Safe by design</h3>
+      <p>Replies come from a fixed, reviewed list of about 1,300 short replies and are never generated, so it can't say something rude or odd. Unhelpful chips like "What?" or "Huh" are never shown.</p>
+    </div>
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7" rx="2"/><rect x="14" y="4" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><path d="M14 17.5h7"/></svg></span>
+      <h3>Chips that differ</h3>
+      <p>At most one reply per intent group, so you won't get "Thanks", "Thank you" and "Thanks!" side by side.</p>
+    </div>
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.5 12 3 3 8.5v7L12 21l9-5.5v-7Z"/><path d="M3 8.5 12 14l9-5.5"/><path d="M12 14v7"/></svg></span>
+      <h3>No dependencies</h3>
+      <p>Pure Kotlin inference. There is no ONNX Runtime, TFLite, ML Kit or native code, and it works from minSdk 21 in Kotlin or Java.</p>
+    </div>
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+      <h3>Private &amp; offline</h3>
+      <p>The model ships inside the AAR. It makes no network calls, needs no permissions and sends no telemetry, so messages never leave the phone.</p>
+    </div>
+  </div>
+  <div class="stat-grid" style="margin-top: 40px;">
+    <div class="stat-card"><div class="stat-value">~0.5ms</div><div class="stat-label">Per message</div><div class="stat-note">Android emulator, once warm</div></div>
+    <div class="stat-card"><div class="stat-value">~5MB</div><div class="stat-label">On-device</div><div class="stat-note">model + tokenizer + replies</div></div>
+    <div class="stat-card"><div class="stat-value">1,303</div><div class="stat-label">Replies</div><div class="stat-note">reviewed, in intent groups</div></div>
+    <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Dependencies</div><div class="stat-note">no native code</div></div>
+  </div>
+</section>
+
+<section id="screenshots">
+  <div class="section-head">
+    <div class="kicker">On device</div>
+    <h2>Tap a chip, send a reply</h2>
+    <p>Real output from the sample app on an Android emulator. These are not mockups.</p>
+  </div>
+  <div class="grid">
+    <div class="card shot">
+      <img src="screenshots/comeback-tonight.png" alt="Comeback replies to Are you coming tonight?" loading="lazy">
+      <div class="shot-caption"><h3>Plans</h3><p>"Are you coming tonight?" → I'm not sure yet · I haven't decided yet · Yes</p></div>
+    </div>
+    <div class="card shot">
+      <img src="screenshots/comeback-thanks.png" alt="Comeback replies to Thanks for your help" loading="lazy">
+      <div class="shot-caption"><h3>Thanks</h3><p>"Thanks for your help" → No problem, have a great day! · You're welcome · Anytime</p></div>
+    </div>
+    <div class="card shot">
+      <img src="screenshots/comeback-sent.png" alt="A reply OK sent to Running 10 minutes late" loading="lazy">
+      <div class="shot-caption"><h3>Sent</h3><p>"Running 10 minutes late" → tapped "OK"</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="section-head">
+    <div class="kicker">Install</div>
+    <h2>Add it to your build</h2>
+    <p>One line in your Gradle file, available now via JitPack. No API key, no account.</p>
+  </div>
+  <div class="code-block">
+    <div class="code-label">JitPack <span class="tag-pill live">live</span></div>
+    <button class="copy-btn" type="button">Copy</button>
+    <pre><code class="language-kotlin">// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+
+// build.gradle.kts
+dependencies {
+    implementation("com.github.rajumark:comeback:v1.0.0")
+}</code></pre>
+  </div>
+  <div class="prompt-block">
+    <div class="code-label">Build with a prompt</div>
+    <div class="code-block">
+      <button class="copy-btn" type="button">Copy</button>
+      <pre><code>Add Comeback from rajumark to this Android project (Kotlin).
+
+What it does: on-device smart replies. Given a received message, it suggests 3 short replies to tap, picked from a fixed reviewed list. English, ~5 MB, no dependencies, no network.
+
+Install (JitPack):
+  settings.gradle.kts: add maven { url = uri("https://jitpack.io") } to repositories
+  build.gradle.kts: implementation("com.github.rajumark:comeback:v1.0.0")
+
+Usage:
+  val comeback = Comeback(context)      // off the main thread, keep one instance
+  val chips = comeback.replies("Are you coming tonight?").map { it.text }
+
+Repo: https://github.com/rajumark/comeback#readme
+Add the dependency, then follow the README for the exact API and current version.</code></pre>
+    </div>
+  </div>
+</section>
+
+<section id="usage">
+  <div class="section-head">
+    <div class="kicker">Usage</div>
+    <h2>Three lines to reply chips</h2>
+    <p>Load once and reuse the instance. <code>replies()</code> is thread-safe.</p>
+  </div>
+  <div class="two-col">
+    <div class="code-block">
+      <div class="code-label">Kotlin</div>
+      <button class="copy-btn" type="button">Copy</button>
+      <pre><code class="language-kotlin">val comeback = Comeback(context)
+
+val chips = comeback.replies("Let's meet at 7")
+chips.map { it.text }  // [OK, OK, see you then, See you there!]
+
+comeback.close()</code></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-label">Java</div>
+      <button class="copy-btn" type="button">Copy</button>
+      <pre><code class="language-java">try (Comeback comeback = new Comeback(context)) {
+    List&lt;SmartReply&gt; r =
+        comeback.replies("Are you coming tonight?");
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<section id="use-cases">
+  <div class="section-head">
+    <div class="kicker">Use cases</div>
+    <h2>Where Comeback fits</h2>
+    <p>Anywhere a user answers a message and a single tap would do.</p>
+  </div>
+  <div class="usecase-list">
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1.2-4.3A8 8 0 1 1 21 12Z"/></svg></div>
+      <div><h4>Chat &amp; messaging apps</h4><p>Show reply chips above the composer for the last received message.</p><code class="example">"I miss you" → I miss you too</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 1 0-12 0v5l-2 3h16Z"/><path d="M9.5 21a2.5 2.5 0 0 0 5 0"/></svg></div>
+      <div><h4>Notification quick replies</h4><p>Offer reply actions straight from a notification, with no server round trip.</p><code class="example">"Can you call me?" → Sure</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="3"/><path d="M11 18.5h2"/></svg></div>
+      <div><h4>Wear OS &amp; small screens</h4><p>Typing on a watch is painful; one tap isn't.</p><code class="example">"See you tomorrow" → See you</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7M5 10v10h14V10"/><path d="M9 20v-5h6v5"/></svg></div>
+      <div><h4>Community &amp; marketplace inboxes</h4><p>Help buyers and sellers answer quickly on logistics.</p><code class="example">"Let's meet at 7" → OK, see you then</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="1.5" fill="currentColor" stroke="none"/><path d="M4 8.5h16M12 8.5v5M8 21l4-7 4 7M8.5 13.5 5 16M15.5 13.5 19 16"/></svg></div>
+      <div><h4>Accessibility</h4><p>Let people with motor or typing difficulties answer with one tap.</p><code class="example">"Good morning!" → Hello!</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="5"/></svg></div>
+      <div><h4>Offline-first apps</h4><p>Works in airplane mode, on patchy networks and in regions where cloud AI isn't an option.</p><code class="example">"Running 10 minutes late" → OK</code></div>
+    </div>
+  </div>
+</section>
+
+<section id="quality">
+  <div class="section-head">
+    <div class="kicker">Quality</div>
+    <h2>Honest numbers</h2>
+    <p>Measured on 335 hand-written messages across 16 categories. A reply counts as good when a person would plausibly send it.</p>
+  </div>
+  <table>
+    <thead><tr><th></th><th>Comeback</th><th>Google ML Kit Smart Reply</th></tr></thead>
+    <tbody>
+      <tr><td>A good reply in the top 3</td><td>63.6%</td><td>72.8%</td></tr>
+      <tr><td>Top reply is good</td><td>42.1%</td><td>52.8%</td></tr>
+      <tr><td>Answers every message</td><td>Yes</td><td>95%</td></tr>
+      <tr><td>Size</td><td>4.6 MB</td><td>6.6 MB + 4.4 MB native libs</td></tr>
+      <tr><td>Latency (Android emulator)</td><td>~0.5 ms</td><td>~16.6 ms</td></tr>
+      <tr><td>Dependencies</td><td>None</td><td>ML Kit + native code</td></tr>
+    </tbody>
+  </table>
+  <p class="table-note">ML Kit gives better replies. Comeback is smaller and much faster, needs no native code or Google Play services, and you can read and change its reply list. It is strongest on thanks (100% good in the top 3), yes/no questions (90%), affection and goodbyes. It is weakest on opinions and open questions, where you can hide the chips with <code>minConfidence</code>.</p>
+</section>
+
+<section id="api">
+  <div class="section-head">
+    <div class="kicker">Reference</div>
+    <h2>API at a glance</h2>
+  </div>
+  <table>
+    <thead><tr><th>Member</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>Comeback(context)</code></td><td>Loads the bundled model. Implements <code>Closeable</code>.</td></tr>
+      <tr><td><code>replies(message, limit = 3, minConfidence = 0f)</code></td><td>The best replies first, one per intent group. Empty for a blank message, or when the best reply scores below <code>minConfidence</code>.</td></tr>
+      <tr><td><code>SmartReply(text, confidence)</code></td><td>One reply.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="faq">
+  <div class="section-head">
+    <div class="kicker">FAQ</div>
+    <h2>Questions</h2>
+  </div>
+  <div class="faq-item"><h4>What is Comeback?</h4><p>An Android library that reads a message and returns short replies to show as tappable chips, like the smart replies in messaging apps.</p></div>
+  <div class="faq-item"><h4>Does it generate text?</h4><p>No. It scores a fixed list of about 1,300 reviewed replies and returns the best ones, so every possible output is known in advance.</p></div>
+  <div class="faq-item"><h4>Which languages does it support?</h4><p>English in v1. To detect the language first and show chips only for English, use <a href="https://rajumark.github.io/beacon/">Beacon</a>.</p></div>
+  <div class="faq-item"><h4>Does it run on device?</h4><p>Yes. Inference runs entirely on the device in plain Kotlin. It makes no server calls, needs no network permission and sends no telemetry.</p></div>
+  <div class="faq-item"><h4>Is the Kotlin port exact?</h4><p>Features, the top 5 replies and the 3 shown chips match the Python reference on all 354 test vectors, both on the JVM and on an Android device.</p></div>
+  <div class="faq-item"><h4>Can I use it in a commercial app?</h4><p>The code is Apache-2.0. The model and reply list were trained on dialogue datasets, and some of those are licensed for non-commercial use only. Read the NOTICE file first.</p></div>
+</section>
+
+<footer>
+  <div class="foot-links">
+    <a href="https://github.com/rajumark/comeback">GitHub</a>
+    <a href="https://github.com/rajumark/comeback/blob/main/LICENSE">Apache-2.0 License</a>
+    <a href="https://github.com/rajumark/comeback/blob/main/NOTICE">Notice</a>
+    <a href="https://rajumark.github.io/moji/">Moji</a>
+    <a href="https://rajumark.github.io/beacon/">Beacon</a>
+  </div>
+  <div class="copyright">© 2026 Hoverfly · Comeback</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+<script>
+  if (window.hljs) { document.querySelectorAll('pre code[class*="language-"]').forEach(function (b) { hljs.highlightElement(b); }); }
+</script>
+
+<script>
+  document.querySelectorAll(".copy-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var code = btn.closest(".code-block").querySelector("pre code");
+      if (!code) return;
+      navigator.clipboard.writeText(code.textContent).then(function () {
+        var original = btn.textContent;
+        btn.textContent = "Copied";
+        btn.classList.add("copied");
+        window.setTimeout(function () {
+          btn.textContent = original;
+          btn.classList.remove("copied");
+        }, 1500);
+      });
+    });
+  });
+</script>
+
+<script>
+  // Real output from the model, rotating every 6 s.
+  var DEMO = [["Thanks for your help", ["No problem, have a great day!", "You're welcome", "Anytime"]], ["Are you coming tonight?", ["I'm not sure yet", "I haven't decided yet", "Yes"]], ["Can you call me?", ["Sure", "Yeah", "Of course!"]], ["Let's meet at 7", ["OK", "OK, see you then", "See you there!"]], ["Good morning!", ["Hello!", "Good morning", "How are you today?"]], ["See you tomorrow", ["See you", "Bye", "Cool"]], ["Running 10 minutes late", ["OK", "Ok see you", "That's not too bad"]]];
+  (function () {
+    var demo = document.getElementById("heroDemo");
+    var i = 0;
+    function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+    function render(ex) {
+      document.getElementById("demoPrompt").textContent = 'comeback.replies("' + ex[0] + '")';
+      document.getElementById("demoInput").textContent = ex[0];
+      document.getElementById("demoChips").innerHTML = ex[1].map(function (r) { return "<span>" + esc(r) + "</span>"; }).join("");
+    }
+    render(DEMO[0]);
+    window.setInterval(function () {
+      demo.classList.add("is-fading");
+      window.setTimeout(function () { i = (i + 1) % DEMO.length; render(DEMO[i]); demo.classList.remove("is-fading"); }, 350);
+    }, 6000);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+Comeback
+Copyright 2026 The Comeback authors
+
+The source code is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The bundled model and reply list (comeback/src/main/assets/comeback) were trained on or
+derived from the datasets below. Several of them are published for NON-COMMERCIAL use only,
+so the model and reply list inherit those terms until they are retrained without them.
+
+  - SAMSum ........................ CC BY-NC-ND 4.0   (non-commercial)
+  - DialogSum ..................... check license
+  - DailyDialog ................... CC BY-NC-SA 4.0   (non-commercial)
+  - SODA (AllenAI) ................ CC BY 4.0
+  - EmpatheticDialogues ........... CC BY-NC 4.0      (non-commercial)
+  - PersonaChat ................... check license
+  - Synthetic-Persona-Chat (Google) CC BY 4.0
+  - Blended Skill Talk ............ check license
+  - Cornell Movie-Dialogs Corpus .. check license
+  - Synthetic texting data generated with Qwen2.5-1.5B-Instruct (Apache-2.0)
+  - all-MiniLM-L6-v2 .............. Apache-2.0  (teacher for distillation)
+
+TODO before commercial use: retrain without the non-commercial sources, or confirm the terms,
+and fill in the "check license" entries.
