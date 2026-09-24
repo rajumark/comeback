@@ -1,7 +1,7 @@
 Comeback
 Copyright 2026 The Comeback authors
 
-The source code is licensed under the Apache License, Version 2.0 (see LICENSE).
+Licensed under the Hoverfly Community License (see LICENSE).
 
 The bundled model and reply list (comeback/src/main/assets/comeback) were trained on or
 derived from the datasets below. Several of them are published for NON-COMMERCIAL use only,
