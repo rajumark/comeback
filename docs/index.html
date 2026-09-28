@@ -325,6 +325,16 @@
   .table-note { font-size:14px; color:var(--text-secondary); margin-top:18px; line-height:1.6; }
   .table-wrap { overflow-x:auto; }
   @media (max-width: 720px) { .nav-links { display:none; } .hero { padding-top:60px; } }
+
+  /* App ideas */
+  .idea-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; }
+  .idea {
+    display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+  }
+  .idea .emo { font-size: 22px; line-height: 1.2; flex: none; }
+  .idea p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--text-secondary); }
+  .idea p b { color: var(--text); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -340,6 +350,7 @@
       <a href="#install">Install</a>
       <a href="#usage">Usage</a>
       <a href="#quality">Quality</a>
+      <a href="#ideas">Ideas</a>
       <a href="#api">API</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
@@ -525,6 +536,36 @@ comeback.close()</code></pre>
       <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="5"/></svg></div>
       <div><h4>Offline-first apps</h4><p>Works in airplane mode, on patchy networks and in regions where cloud AI isn't an option.</p><code class="example">"Running 10 minutes late" → OK</code></div>
     </div>
+  </div>
+</section>
+
+<section id="ideas">
+  <div class="section-head">
+    <div class="kicker">App ideas</div>
+    <h2>20 apps you could build with Comeback</h2>
+    <p>Real problems Comeback solves today. Pick one and ship it.</p>
+  </div>
+  <div class="idea-list">
+    <div class="idea"><span class="emo" aria-hidden="true">💬</span><p><b>Chat app reply chips</b> · Show three one-tap replies above the keyboard for the last received message.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🔔</span><p><b>Notification quick replies</b> · Reply straight from the notification shade, with no server round trip.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">⌚</span><p><b>Wear OS messaging</b> · Typing on a watch is painful; tapping "On my way" isn't.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🛒</span><p><b>Marketplace seller inbox</b> · Answer "Is this still available?" with "Yes, it is" in one tap.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🚕</span><p><b>Driver &amp; delivery apps</b> · Let drivers send "Reached" or "5 minutes away" without typing on the road.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🏠</span><p><b>Rental &amp; property chat</b> · Owners reply to "Can I visit today?" in one tap instead of typing each time.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">💼</span><p><b>Team chat</b> · Quick "Sounds good", "On it" and "Thanks!" acknowledgements in work messengers.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">👵</span><p><b>Senior-friendly messenger</b> · Big one-tap reply buttons for parents and grandparents who find typing slow.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">♿</span><p><b>Accessibility</b> · People with motor or typing difficulties answer any message with a single tap.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">📧</span><p><b>Email client</b> · Short suggested replies for quick "Yes, works for me" type emails.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🎮</span><p><b>In-game chat</b> · Reply to teammates without leaving the match or opening a keyboard.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🏥</span><p><b>Appointment reminders</b> · Patients reply "Confirmed" or "Can we reschedule?" in one tap.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">📦</span><p><b>Delivery customer chat</b> · Customers answer the delivery person with "Leave it at the door" instantly.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">👨‍👩‍👧</span><p><b>Family safety app</b> · Kids reply "Reached school" or "Coming home" to parents with one tap.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🎓</span><p><b>Classroom messaging</b> · Students and parents quickly acknowledge teacher announcements.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🧑‍💼</span><p><b>Sales CRM</b> · Reps respond to lead messages fast so no enquiry waits for hours.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🏘️</span><p><b>Housing society app</b> · Residents reply "Noted, thanks" to society notices without typing.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🤖</span><p><b>Chatbot suggestions</b> · Show likely user responses as buttons in a support bot conversation.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">✈️</span><p><b>Offline-first messaging</b> · Suggestions keep working in airplane mode and on patchy rural networks.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">💞</span><p><b>Dating &amp; social apps</b> · Help users keep conversations moving with quick, friendly, reviewed replies.</p></div>
   </div>
 </section>
 
