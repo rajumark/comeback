@@ -357,6 +357,25 @@
   .hero-demo .prompt { font-family: var(--mono); color: var(--accent); }
   .hero-demo .input-row { border: 0; border-radius: 16px; box-shadow: var(--shadow); padding: 14px 18px; }
   @media (max-width: 640px) { .hero-demo { padding: 24px 18px; border-radius: 24px; } }
+  /* Hero demo: a friend types, three replies spring up, one tap sends */
+  .chat { display: flex; flex-direction: column; gap: 10px; min-height: 124px; }
+  .chat .msg { max-width: 80%; padding: 10px 16px; font-size: 16px; line-height: 1.45; box-shadow: var(--shadow); animation: msg-in .35s cubic-bezier(.2,.9,.3,1.2); }
+  .chat .msg.in { align-self: flex-start; background: var(--card-bg); color: var(--text); border-radius: 18px 18px 18px 6px; }
+  .chat .msg.out { align-self: flex-end; background: var(--accent); color: #fff; border-radius: 18px 18px 6px 18px; transform-origin: 100% 100%; }
+  .chat .msg .ticks { margin-left: 8px; font-size: 12px; color: var(--green); letter-spacing: -3px; }
+  .chat .typing { display: inline-flex; gap: 5px; padding: 14px 16px; }
+  .chat .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-secondary); animation: typing-dot 1s infinite ease-in-out; }
+  .chat .typing i:nth-child(2) { animation-delay: .15s; } .chat .typing i:nth-child(3) { animation-delay: .3s; }
+  .reply-chips { min-height: 40px; margin-top: 16px; }
+  .reply-chips span { position: relative; overflow: hidden; cursor: default; padding: 8px 16px; font-size: 15px; box-shadow: var(--shadow);
+    animation: chip-spring .45s cubic-bezier(.2,.9,.3,1.35) backwards; transition: transform .15s ease, opacity .25s ease; }
+  .reply-chips span.is-tapped { transform: scale(.92); }
+  .reply-chips span .ripple { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: rgba(7, 48, 66, .35); animation: ripple .5s ease-out forwards; }
+  .reply-chips.is-leaving span { opacity: 0; transform: translateY(8px); }
+  @keyframes msg-in { from { opacity: 0; transform: translateY(10px) scale(.92); } }
+  @keyframes typing-dot { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-5px); opacity: 1; } }
+  @keyframes chip-spring { from { opacity: 0; transform: translateY(16px) scale(.8); } }
+  @keyframes ripple { to { transform: scale(18); opacity: 0; } }
 
   /* Buttons: 48px Material pills */
   .btn { height: 48px; padding: 0 24px; border: 0; font-size: 16px; font-weight: 500; justify-content: center; transition: box-shadow .2s, background .2s; }
@@ -490,9 +509,12 @@
   </div>
   <p class="hero-trust">Free up to 10k monthly active devices · No API key · Live on JitPack</p>
   <div class="hero-demo" id="heroDemo">
-    <div class="prompt" id="demoPrompt">comeback.replies("Thanks for your help")</div>
-    <div class="bubble" id="demoInput">Thanks for your help</div>
-    <div class="chip-row" id="demoChips"></div>
+    <div class="prompt" id="demoPrompt">comeback.replies(message)</div>
+    <div class="chat" id="demoChat">
+      <div class="msg in">Thanks for your help</div>
+      <div class="msg out">No problem, have a great day!<span class="ticks">✓✓</span></div>
+    </div>
+    <div class="chip-row reply-chips" id="demoChips"></div>
   </div>
 </header>
 
@@ -841,22 +863,40 @@ comeback.close()</code></pre>
 </script>
 
 <script>
-  // Real output from the model, rotating every 6 s.
   var DEMO = [["Thanks for your help", ["No problem, have a great day!", "You're welcome", "Anytime"]], ["Are you coming tonight?", ["I'm not sure yet", "I haven't decided yet", "Yes"]], ["Can you call me?", ["Sure", "Yeah", "Of course!"]], ["Let's meet at 7", ["OK", "OK, see you then", "See you there!"]], ["Good morning!", ["Hello!", "Good morning", "How are you today?"]], ["See you tomorrow", ["See you", "Bye", "Cool"]], ["Running 10 minutes late", ["OK", "Ok see you", "That's not too bad"]]];
+  // Real output from the model: a message arrives, the three suggested replies spring up, the first is tapped and sent.
   (function () {
-    var demo = document.getElementById("heroDemo");
-    var i = 0;
-    function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
-    function render(ex) {
-      document.getElementById("demoPrompt").textContent = 'comeback.replies("' + ex[0] + '")';
-      document.getElementById("demoInput").textContent = ex[0];
-      document.getElementById("demoChips").innerHTML = ex[1].map(function (r) { return "<span>" + esc(r) + "</span>"; }).join("");
+    var demo = document.getElementById("heroDemo"), chat = document.getElementById("demoChat"), chips = document.getElementById("demoChips");
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    function sleep(ms) { return new Promise(function (r) { window.setTimeout(r, ms); }); }
+    function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+    async function play(ex) {
+      chat.innerHTML = ""; chips.innerHTML = ""; chips.classList.remove("is-leaving");
+      await sleep(300);
+      var incoming = el("div", "msg in typing");
+      incoming.innerHTML = "<i></i><i></i><i></i>";
+      chat.appendChild(incoming);
+      await sleep(1100);
+      incoming.className = "msg in"; incoming.textContent = ex[0];
+      incoming.style.animation = "none"; incoming.offsetWidth; incoming.style.animation = "";
+      await sleep(450);
+
+      var spans = ex[1].map(function (r, k) { var s = el("span", "", r); s.style.animationDelay = (k * 110) + "ms"; chips.appendChild(s); return s; });
+      await sleep(1500);
+      var pick = spans[0];
+      pick.appendChild(el("i", "ripple")); pick.classList.add("is-tapped");
+      await sleep(180); pick.classList.remove("is-tapped");
+      await sleep(150);
+      chips.classList.add("is-leaving");
+      var out = el("div", "msg out", ex[1][0]);
+      chat.appendChild(out);
+      await sleep(500);
+      out.appendChild(el("span", "ticks", "✓✓"));
+      await sleep(2400);
+      demo.classList.add("is-fading"); await sleep(380);
+      chat.innerHTML = ""; chips.innerHTML = ""; demo.classList.remove("is-fading");
     }
-    render(DEMO[0]);
-    window.setInterval(function () {
-      demo.classList.add("is-fading");
-      window.setTimeout(function () { i = (i + 1) % DEMO.length; render(DEMO[i]); demo.classList.remove("is-fading"); }, 350);
-    }, 6000);
+    (async function loop() { var i = 0; for (;;) { await play(DEMO[i]); i = (i + 1) % DEMO.length; } })();
   })();
 </script>
 </body>
