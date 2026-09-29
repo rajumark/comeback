@@ -1,40 +1,45 @@
 # Comeback 💬
 
-By Hoverfly. On-device smart replies for Android. It reads the message you received and suggests short replies to tap, like the reply chips in messaging apps.
+By Hoverfly. On-device smart replies for **Kotlin Multiplatform**: Android, iOS, macOS, JVM desktop, JavaScript and WebAssembly. It reads the message you received and suggests short replies to tap, like the reply chips in messaging apps.
 
 ```kotlin
 import io.github.rajumark.hoverfly.comeback.Comeback
 
-Comeback(context).use { comeback ->
+Comeback().use { comeback ->
     comeback.replies("Thanks for your help")   // [No problem, have a great day!] [You're welcome] [Anytime]
 }
 ```
 
 - **Safe by design.** Replies are picked from a fixed, reviewed list of about 1,300 short replies, never generated, so it can't write something rude or odd. About 100 unhelpful replies ("What?", "Huh", "Yes, sir") are never shown.
 - **Different chips.** At most one reply per intent group, so the 3 chips mean different things.
-- **No dependencies.** Inference is plain Kotlin. There is no ONNX Runtime, TFLite, ML Kit or native code, so the library adds about 5 MB to an APK.
-- **Private and offline.** The model ships inside the AAR. There is no network, no permission and no telemetry.
+- **No dependencies.** Inference is plain Kotlin. There is no ONNX Runtime, TFLite, ML Kit or native code, so the library adds about 5 MB to an app.
+- **Private and offline.** The model ships inside the library on every platform. There is no network, no permission and no telemetry.
 - **Fast.** About 0.5 ms per message on an Android emulator (Apple silicon), ~0.2 ms on the JVM.
 - **minSdk 21.** Works from Kotlin and Java. English (v1).
 
 ## Install
 
-Available via [JitPack](https://jitpack.io/#rajumark/comeback):
-
 ```kotlin
-// settings.gradle.kts
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
-    }
-}
-
-// build.gradle.kts
+// build.gradle.kts: commonMain, or any platform source set
 dependencies {
-    implementation("com.github.rajumark:comeback:v1.1.0")
+    implementation("io.github.rajumark:comeback:2.0.0")
 }
 ```
+
+It's on Maven Central, so no extra repository is needed. Gradle picks the right artifact for each platform:
+
+| Platform | Artifact |
+|---|---|
+| Android (minSdk 21) | `comeback-android` |
+| JVM desktop (Java 8+) | `comeback-jvm` |
+| iOS device and simulator (arm64) | `comeback-iosarm64`, `comeback-iossimulatorarm64` |
+| macOS (arm64) | `comeback-macosarm64` |
+| JavaScript (browser, Node) | `comeback-js` |
+| WebAssembly (browser, Node) | `comeback-wasm-js` |
+
+The Android-only 1.x releases are on JitPack: `com.github.rajumark:comeback:v1.x`.
+
+Upgrading from 1.x on Android: `Comeback(context)` still compiles in Kotlin (deprecated). The model no longer needs a `Context`, so switch to `Comeback()`. Java code must change `new Comeback(context)` to `new Comeback()`.
 
 ## Screenshots
 
@@ -45,12 +50,18 @@ The sample app on an emulator. Replies are computed on the device, with no netwo
 | ![Are you coming tonight?](docs/screenshots/comeback-tonight.png) | ![Thanks for your help](docs/screenshots/comeback-thanks.png) | ![Running 10 minutes late, replied OK](docs/screenshots/comeback-sent.png) |
 | "Are you coming tonight?" | "Thanks for your help" | "Running 10 minutes late" → OK |
 
+The KMP sample on each platform:
+
+| Android | iOS | Desktop | Web (Wasm) |
+|---|---|---|---|
+| ![Android](screenshots/android/1-coming-tonight.png) | ![iOS](screenshots/ios/1-coming-tonight.png) | ![Desktop](screenshots/desktop/1-coming-tonight.png) | ![Web](screenshots/web-wasm/1-coming-tonight.png) |
+
 ## Use
 
 ```kotlin
 import io.github.rajumark.hoverfly.comeback.Comeback
 
-val comeback = Comeback(context)        // loads the model: ~50–200 ms, do it off the main thread, keep one instance
+val comeback = Comeback()        // loads the model: ~50–200 ms, do it off the main thread, keep one instance
 
 val replies = comeback.replies("Let's meet at 7")
 replies.map { it.text }                  // [OK, OK, see you then, See you there!]
@@ -59,7 +70,7 @@ replies.first().confidence               // 0.31
 comeback.replies("See you tomorrow", limit = 1)                 // [See you]
 comeback.replies("Pizza or burgers?", minConfidence = 0.2f)     // [] - nothing fits well, show no chips
 
-comeback.close()                         // frees the model's heap memory
+comeback.close()                         // frees the model's memory
 ```
 
 `replies()` is thread-safe. It returns an empty list for a blank message.
@@ -67,13 +78,13 @@ comeback.close()                         // frees the model's heap memory
 With coroutines:
 
 ```kotlin
-val comeback = withContext(Dispatchers.Default) { Comeback(context) }
+val comeback = withContext(Dispatchers.Default) { Comeback() }
 ```
 
 From Java:
 
 ```java
-try (Comeback comeback = new Comeback(context)) {
+try (Comeback comeback = new Comeback()) {
     List<SmartReply> r = comeback.replies("Are you coming tonight?");
 }
 ```
@@ -82,7 +93,7 @@ try (Comeback comeback = new Comeback(context)) {
 
 | | |
 |---|---|
-| `Comeback(context)` | Loads the bundled model. `Closeable`. |
+| `Comeback()` | Loads the bundled model. `AutoCloseable`. |
 | `replies(message, limit = 3, minConfidence = 0f)` | The best replies first, one per intent group. Returns `List<SmartReply>`. |
 | `SmartReply(text, confidence)` | One reply. |
 
@@ -105,34 +116,48 @@ ML Kit gives better replies. Comeback is smaller, much faster, has no native cod
 
 Strong categories: thanks (100% good in top 3), yes/no questions (90%), affection, goodbyes. Weak: opinions ("Pizza or burgers?"), open questions and information messages, where a short canned reply rarely fits. Use `minConfidence` there.
 
-## Sample app
+## Sample apps
 
-`sample/` is a Jetpack Compose (Material 3) demo: type or pick a message, see the reply chips with confidences, and tap one to "send" it.
+`sample/` is a separate Gradle build that uses the **published** library, never the source. It resolves `io.github.rajumark` only from Maven Local, or from Maven Central with `-PcomebackRepo=central`. It has a Compose Multiplatform app for Android, desktop and iOS, and a web page built for both Kotlin/JS and Kotlin/Wasm.
 
 ```bash
-./gradlew :sample:installDebug
+./gradlew :comeback:publishToMavenLocal
+cd sample
+./gradlew :androidApp:installRelease
+./gradlew :desktopApp:run
+./gradlew :webApp:wasmJsBrowserDevelopmentRun     # or :webApp:jsBrowserDevelopmentRun
+open iosApp/iosApp.xcodeproj                       # run the iosApp scheme on a simulator
 ```
 
 ## Project layout
 
 ```
-comeback/             the library (AAR)
-  src/main/assets/comeback/   comeback.bin (int8 weights) · spm_pieces.tsv (tokenizer) · replies.tsv (1303 replies)
-  src/main/kotlin/io/github/rajumark/hoverfly/comeback/          public API: Comeback, SmartReply
-  src/main/kotlin/io/github/rajumark/hoverfly/comeback/internal/ Featurizer, SentencePiece, Network (the model in plain Kotlin)
-  src/test/           JVM tests: parity with Python on 354 vectors, API, latency
-  src/androidTest/    the same parity check on a real device (Android ICU)
-sample/               demo app
+comeback/                      the library
+  src/commonMain/              public API (Comeback, SmartReply) and the model in plain Kotlin
+                               (internal/: Featurizer, SentencePiece, Network, UnicodeTables)
+  src/{jvm,android,apple,js,wasmJs}Main/   the only platform code: NFKC normalization + model loading
+  src/modelData/               comeback.bin (int8 weights) · spm_pieces.tsv (tokenizer) · replies.tsv (the reply set)
+  src/commonTest/              parity with Python on 354 vectors, API, latency; runs on every target
+sample/                        demo apps using the published artifacts
+scripts/GenTables.java         generates UnicodeTables.kt (character classes) so every platform agrees
+docs/                          website (rajumark.github.io/comeback)
 ```
+
+On JVM and Android the model ships as Java resources in the jar/AAR. Kotlin/Native and the web have no resources, so the build compiles it into the library (`generateEmbeddedModel`).
 
 ## Tests
 
 ```bash
-./gradlew :comeback:testDebugUnitTest                        # JVM: parity + API
-./gradlew :comeback:connectedDebugAndroidTest                # on a connected device/emulator
+./gradlew :comeback:jvmTest
+./gradlew :comeback:testAndroidHostTest
+./gradlew :comeback:connectedAndroidDeviceTest              # on a connected device/emulator
+./gradlew :comeback:iosSimulatorArm64Test
+./gradlew :comeback:macosArm64Test
+./gradlew :comeback:jsNodeTest :comeback:jsBrowserTest
+./gradlew :comeback:wasmJsNodeTest :comeback:wasmJsBrowserTest
 ```
 
-The parity tests require identical featurizer ids, an identical top 5 and the same 3 shown replies as the Python reference on all 354 vectors. Probabilities match to within 1e-4; the current maximum difference is about 2e-6.
+The parity tests require identical token and n-gram ids, the same top-1 reply, the same top-5 and the same 3 shown replies as the Python reference on all 354 vectors, on every target. The current maximum probability difference is 2.3e-6.
 
 ## How it works
 
