@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "comeback-kmp"
 include(":comeback")
+include(":demo")
