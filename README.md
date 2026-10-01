@@ -1,6 +1,8 @@
 # Comeback 💬
 
-By Hoverfly. On-device smart replies for **Kotlin Multiplatform**: Android, iOS, macOS, JVM desktop, JavaScript and WebAssembly. It reads the message you received and suggests short replies to tap, like the reply chips in messaging apps.
+**[Website](https://rajumark.github.io/comeback/)** · **[All Hoverfly models](https://rajumark.github.io/hoverfly/#models)** · [Maven Central](https://central.sonatype.com/artifact/io.github.rajumark/comeback)
+
+By [Hoverfly](https://rajumark.github.io/hoverfly/). On-device smart replies for **Kotlin Multiplatform**: Android, iOS, macOS, JVM desktop, JavaScript and WebAssembly. It reads the message you received and suggests short replies to tap, like the reply chips in messaging apps.
 
 ```kotlin
 import io.github.rajumark.hoverfly.comeback.Comeback
@@ -166,6 +168,22 @@ It uses the same two-stream network as [Moji](https://github.com/rajumark/moji):
 ## Publishing
 
 See [PUBLISHING.md](PUBLISHING.md).
+
+## More Hoverfly models
+
+Comeback is one of eight small on-device models by [Hoverfly](https://rajumark.github.io/hoverfly/), all with the same install, the same free tier and nothing sent to a server.
+
+| Model | What it does | Source |
+|---|---|---|
+| 🙂 [Moji](https://rajumark.github.io/moji/) | Emoji suggestions in 22+ languages | [GitHub](https://github.com/rajumark/moji) |
+| 🗼 [Beacon](https://rajumark.github.io/beacon/) | Language and script detection, Hinglish included | [GitHub](https://github.com/rajumark/beacon) |
+| ✍️ [Comma](https://rajumark.github.io/comma/) | Punctuation and capitals for voice-typed text | [GitHub](https://github.com/rajumark/comma) |
+| 😊 [Emotion](https://rajumark.github.io/emotion/) | 28 emotions and an overall mood per message | [GitHub](https://github.com/rajumark/emotion) |
+| 🛡️ [Gatekeeper](https://rajumark.github.io/gatekeeper/) | Toxic message detection for Indian chat | [GitHub](https://github.com/rajumark/gatekeeper) |
+| 🏚️ [Hideout](https://rajumark.github.io/hideout/) | Finds and hides phone numbers, UPI, Aadhaar and more | [GitHub](https://github.com/rajumark/hideout) |
+| 🖍️ [Chalk](https://rajumark.github.io/chalk/) | Doodle recognition, 345 things from pen strokes | [GitHub](https://github.com/rajumark/chalk) |
+
+See them all on the [Hoverfly website](https://rajumark.github.io/hoverfly/#models).
 
 ## Pricing & license
 
